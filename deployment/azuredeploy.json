@@ -1,0 +1,227 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "prefix": {
+            "type": "string",
+            "defaultValue": "msisample",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "aadAdminOid": {
+            "type": "string",
+            "defaultValue": "5e33afc1-b1a2-47eb-a82b-5511e2befb5c",
+            "metadata": {
+                "description": "OID for SQL SA (AAD)"
+            }
+        },
+        "aadAdminLogin": {
+            "type": "string",
+            "defaultValue": "Empire_admins",
+            "metadata": {
+                "description": "Login for SQL SA (AAD)"
+            }
+        },
+        "SQL Administrator Login": {
+            "type": "string",
+            "defaultValue": "msisample-sa",
+            "metadata": {
+                "description": ""
+            }
+        },
+        "SQL Administrator Password": {
+            "type": "string",
+            "defaultValue": "asdfRTEq23!asd23SDDFSDFDsdopi",
+            "metadata": {
+                "description": ""
+            }
+        }
+    },
+    "variables": {
+        "webSiteName": "[concat(parameters('prefix'), '-web')]",
+        "keyVaultName": "[concat(parameters('prefix'), '-kv')]",
+        "appPlanName": "[concat(parameters('prefix'), '-plan')]",
+        "appInsightsName": "[concat(parameters('prefix'), '-ins')]",
+        "sqlServerName": "[concat(parameters('prefix'), '-sql')]",
+        "sqlDbName" : "chamber"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/sites",
+            "apiVersion": "2018-02-01",
+            "name": "[variables('webSiteName')]",
+            "location": "[resourceGroup().location]",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "dependsOn": [
+                "[concat('Microsoft.Web/serverfarms/', variables('appPlanName'))]"
+            ],
+            "properties": {
+                "name": "[variables('webSiteName')]",
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', variables('appPlanName'))]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "KeyVault:BaseUrl",
+                            "value": "[concat('https://', variables('keyVaultName'), '.vault.azure.net/')]"
+                        },
+                        {
+                            "name": "ApplicationInsights:InstrumentationKey",
+                            "value": "[reference(resourceId('Microsoft.Insights/components/', variables('appInsightsName')), '2015-05-01').InstrumentationKey]"
+                        }
+                    ],
+                    "connectionStrings" : [
+                        {
+                            "name":"ConnectionStrings--ChamberConnection",
+                            "connectionString":"[concat('Server=tcp:', variables('sqlServerName'), '.database.windows.net,1433;Database=',variables('sqlDbName'),';')]",
+                            "type":  "SQLAzure"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2016-09-01",
+            "name": "[variables('appPlanName')]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "F1",
+                "capacity": 1
+            },
+            "properties": {
+                "name": "[variables('appPlanName')]"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2018-02-14",
+            "name": "[variables('keyVaultName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "enabledForDeployment": true,
+                "enabledForTemplateDeployment": true,
+                "enabledForDiskEncryption": true,
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": [
+                    {
+                        "tenantId": "[subscription().tenantId]",
+                        "objectId": "[reference(concat(resourceId('Microsoft.Web/sites', variables('webSiteName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]",
+                        "permissions": {
+                            "keys": [
+                                "Get",
+                                "Decrypt",
+                                "Encrypt",
+                                "Verify",
+                                "Sign"
+                            ],
+                            "secrets": [
+                                "Get",
+                                "List"
+                            ],
+                            "certificates": [
+                                "Get",
+                                "GetIssuers",
+                                "ListIssuers"
+                            ]
+                        }
+                    }
+                ],
+                "sku": {
+                    "name": "standard",
+                    "family": "A"
+                }
+            },
+            "resources": [
+                {
+                    "type": "secrets",
+                    "name": "chamber--secrets",
+                    "apiVersion": "2018-02-14",
+                    "properties": {
+                        "value": "basilisk"
+                    },
+                    "dependsOn": [
+                        "[concat('Microsoft.KeyVault/vaults/', variables('keyVaultName'))]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Insights/components",
+            "apiVersion": "2015-05-01",
+            "name": "[variables('appInsightsName')]",
+            "location": "[resourceGroup().location]",
+            "kind": "web",
+            "properties": {
+                "Application_Type": "web",
+                "Flow_Type": "Redfield",
+                "Request_Source": "AppServiceEnablementCreate"
+            }
+        },  
+        {
+            "type": "Microsoft.Sql/servers",
+            "apiVersion": "2018-06-01-preview",
+            "name": "[variables('sqlServerName')]",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "administratorLogin": "[parameters('SQL Administrator Login')]",
+                "administratorLoginPassword": "[parameters('SQL Administrator Password')]"
+            },
+            "resources": [
+                {
+                    "apiVersion": "2018-06-01-preview",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/',variables('sqlServerName'))]"
+                    ],
+                    "name": "AllowAllWindowsAzureIps",
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "0.0.0.0"
+                    },
+                    "type": "firewallrules"
+                },
+                {
+                    "type": "administrators",
+                    "name": "activeDirectory",
+                    "apiVersion": "2014-04-01-preview",
+                    "properties": {
+                        "administratorType": "ActiveDirectory",
+                        "login": "[variables('webSiteName')]",
+                        "sid": "[reference(concat(resourceId('Microsoft.Web/sites', variables('webSiteName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]",
+                        "tenantId": "[subscription().tenantId]"
+                    },
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', variables('sqlServerName'))]"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Microsoft.Sql/servers/databases",
+            "apiVersion": "2017-10-01-preview",
+            "name": "[concat(variables('sqlServerName'), '/', variables('sqlDbName'))]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Sql/servers/', variables('sqlServerName'))]"
+            ],
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "edition": "Basic",
+                "maxSizeBytes": "1073741824",
+                "requestedServiceObjectiveName": "Basic"
+            }
+        }
+    ],
+    "outputs": {
+        "appServicePrincipalId": {
+           "type": "string",
+           "value": "[reference(concat(resourceId('Microsoft.Web/sites', variables('webSiteName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]"
+        },
+        "foo": {
+            "type":"object",
+            "value": "[reference(concat(resourceId('Microsoft.Web/sites', variables('webSiteName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW')]"
+        }
+    }
+}
