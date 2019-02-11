@@ -74,7 +74,7 @@
                     ],
                     "connectionStrings" : [
                         {
-                            "name":"ConnectionStrings--ChamberConnection",
+                            "name":"ChamberConnection",
                             "connectionString":"[concat('Server=tcp:', variables('sqlServerName'), '.database.windows.net,1433;Database=',variables('sqlDbName'),';')]",
                             "type":  "SQLAzure"
                         }
