@@ -11,14 +11,14 @@
         },
         "aadAdminOid": {
             "type": "string",
-            "defaultValue": "5e33afc1-b1a2-47eb-a82b-5511e2befb5c",
+            "defaultValue": "user or group oid in AAD",
             "metadata": {
                 "description": "OID for SQL SA (AAD)"
             }
         },
         "aadAdminLogin": {
             "type": "string",
-            "defaultValue": "Empire_admins",
+            "defaultValue": "--user-or-group-name",
             "metadata": {
                 "description": "Login for SQL SA (AAD)"
             }
@@ -32,7 +32,7 @@
         },
         "SQL Administrator Password": {
             "type": "string",
-            "defaultValue": "asdfRTEq23!asd23SDDFSDFDsdopi",
+            "defaultValue": "come up with something stroganoff",
             "metadata": {
                 "description": ""
             }

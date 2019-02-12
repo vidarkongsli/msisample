@@ -6,7 +6,7 @@ param (
     [Parameter(Mandatory=$false)]
     $location='westeurope',
     [Parameter(Mandatory=$false)]
-    $subscription='5c45e8ca-a796-4870-b93e-379b1aa6a28f'
+    $subscription='--subscription--guid--'
 )
 
 Select-AzureRmSubscription -Subscription $subscription | out-null
