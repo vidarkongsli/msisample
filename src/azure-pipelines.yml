@@ -1,0 +1,42 @@
+# ASP.NET Core
+# Build and test ASP.NET Core projects targeting .NET Core.
+# Add steps that run tests, create a NuGet package, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+name: $(BuildDefinitionName)_$(SourceBranchName)_$(date:yyyyMMdd)$(rev:.r)
+
+trigger:
+  branches:
+    include:
+    - master
+
+pool:
+  vmImage: 'Ubuntu-16.04'
+
+variables:
+  buildConfiguration: 'Release'
+  buildProjects: '**/*.csproj'
+
+steps:
+- checkout: self
+  clean: true
+
+- task: DotNetCoreCLI@2
+  displayName: Publish app
+  inputs:
+    command: publish
+    publishWebProjects: false
+    projects: '$(buildProjects)'
+    arguments: '--configuration $(buildConfiguration) --output $(build.artifactstagingdirectory)'
+    zipAfterPublish: True
+
+- task: CopyFiles@2
+  displayName: 'Copy ARM Template files'
+  inputs:
+    SourceFolder: deployment
+    TargetFolder: '$(build.artifactstagingdirectory)/arm'
+    contents: '*'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact'
+  inputs:
+    PathtoPublish: '$(build.artifactstagingdirectory)'
