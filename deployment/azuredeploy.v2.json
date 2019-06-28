@@ -23,14 +23,14 @@
                 "description": "Login for SQL SA (AAD)"
             }
         },
-        "SQL Administrator Login": {
+        "sqlAdminLogin": {
             "type": "string",
             "defaultValue": "msisample-sa",
             "metadata": {
                 "description": ""
             }
         },
-        "SQL Administrator Password": {
+        "sqlAdminPwd": {
             "type": "string",
             "defaultValue": "come up with something stroganoff",
             "metadata": {
@@ -209,8 +209,8 @@
             "name": "[variables('sqlServerName')]",
             "location": "[resourceGroup().location]",
             "properties": {
-                "administratorLogin": "[parameters('SQL Administrator Login')]",
-                "administratorLoginPassword": "[parameters('SQL Administrator Password')]"
+                "administratorLogin": "[parameters('sqlAdminLogin')]",
+                "administratorLoginPassword": "[parameters('sqlAdminPwd')]"
             },
             "resources": [
                 {
