@@ -38,9 +38,9 @@ function Get-AccessToken {
 
 function ConvertTo-Sid {
     param (
-        [string]$objectId
+        [string]$appId
     )
-    [guid]$guid = [System.Guid]::Parse($objectId)
+    [guid]$guid = [System.Guid]::Parse($appId)
     foreach ($byte in $guid.ToByteArray()) {
         $byteGuid += [System.String]::Format("{0:X2}", $byte)
     }

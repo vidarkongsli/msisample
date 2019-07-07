@@ -31,7 +31,7 @@ $conn = new-object System.Data.SqlClient.SqlConnection
 $conn.ConnectionString = "Server=tcp:$($sqlServerFQN),1433;Initial Catalog=$($sqlDatabaseName);Persist Security Info=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;" 
 $conn.AccessToken = $token
 
-$sid = ConvertTo-Sid -objectId $appId
+$sid = ConvertTo-Sid -appId $appId
 
 Write-host "Connecting to database $($conn.ConnectionString)"
 Write-SqlNonQuery -connection $conn -stmt @"
